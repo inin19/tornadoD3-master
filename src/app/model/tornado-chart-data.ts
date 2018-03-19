@@ -3,7 +3,6 @@ import * as crossfilter from 'crossfilter';
 
 export class TornadoChartData {
 
-
     static FEMALE = 'F';
     static MALE = 'M';
 
