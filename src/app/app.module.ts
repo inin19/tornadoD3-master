@@ -4,12 +4,14 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { HorizontalChartComponent } from './horizontal-chart/horizontal-chart.component';
+import { LineChartComponent } from './line-chart/line-chart.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
-    HorizontalChartComponent
+    HorizontalChartComponent,
+    LineChartComponent
   ],
   imports: [
     BrowserModule

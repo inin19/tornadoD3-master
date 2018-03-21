@@ -1,9 +1,13 @@
-<div class="container">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-8">
+        <div class="col-6">
             <div (click)="changeData(1)">json1</div>
             <div (click)="changeData(2)">json2</div>
             <app-horizontal-chart *ngIf="proposalJson" [proposalJsonData]="proposalJson" [benchmarkJsonData]="benchmarkJson" ></app-horizontal-chart>
+        </div>
+
+        <div class="col-6">
+          <app-line-chart></app-line-chart>
         </div>
     </div>
 </div>

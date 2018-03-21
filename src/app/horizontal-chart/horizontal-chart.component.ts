@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, ViewChild, Input, ElementRef, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnChanges, ViewChild, Input, ElementRef, ViewEncapsulation, HostListener } from '@angular/core';
 import { TornadoChartData } from '../model/tornado-chart-data';
 import * as d3 from 'd3';
 
@@ -10,9 +10,7 @@ import * as d3 from 'd3';
 })
 export class HorizontalChartComponent implements OnInit, OnChanges {
 
-  // need cache
-  static ageGroup = ['0-18', '18-35', '35-60', '60+'];
-  static gender = ['Female', 'Male'];
+
   static barType = ['proposal', 'benchmark'];
 
 
@@ -31,7 +29,7 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
 
 
   @ViewChild('tornadoChart') private chartContainer: ElementRef;
-  private margin: any = { top: 30, right: 60, bottom: 30, left: 60 };
+  private margin: any = { top: 60, right: 60, bottom: 30, left: 60 };
   private chart: any;
   private width: number;
   private height: number;
@@ -41,6 +39,7 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
   private yInnerScale: any;
   private xAxis: any;
   private yAxis: any;
+  private svg: any;
 
 
 
@@ -51,8 +50,8 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
     this.createChart();
     this.updateChart(this.proposalJsonData);
 
-    console.log(this.yInnerScale('benchmarks'));
-    console.log(this.yInnerScale('proposal'));
+    // console.log(this.yInnerScale('benchmarks'));
+    // console.log(this.yInnerScale('proposal'));
 
     // this.proposalgraphData.forEach(element => {
     //   console.log(element.key, element.percentage);
@@ -87,9 +86,9 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
 
     this.graphDataCombined = this.benchmarkgraphData.concat(this.proposalgraphData);
 
-    this.graphDataCombined.forEach(el => {
-      console.log(el);
-    });
+    // this.graphDataCombined.forEach(el => {
+    //   console.log(el);
+    // });
 
 
   }
@@ -100,11 +99,11 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
     this.height = htmlElement.offsetHeight - this.margin.top - this.margin.bottom;
 
 
-    const svg = d3.select('#tornadoChart').append('svg')
+    this.svg = d3.select('#tornadoChart').append('svg')
       .attr('width', htmlElement.offsetWidth)
       .attr('height', htmlElement.offsetHeight);
 
-    this.chart = svg
+    this.chart = this.svg
       .append('g')
       .classed('bars', true)
       .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
@@ -114,7 +113,7 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
     this.maxPercentage = this.proposalChartData.getMaxPercentage() > this.benchmarkChartData.getMaxPercentage() ?
       this.proposalChartData.getMaxPercentage() : this.benchmarkChartData.getMaxPercentage();
 
-    this.maxPercentage = this.maxPercentage + 0.1;
+    this.maxPercentage = this.maxPercentage + 0.05;
 
 
     // create scales
@@ -128,7 +127,7 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
       .padding(0.2);
 
 
-    this.yInnerScale =  d3.scaleBand().domain(HorizontalChartComponent.barType)
+    this.yInnerScale = d3.scaleBand().domain(HorizontalChartComponent.barType)
       .range([0, this.yScale.bandwidth()])
       .paddingInner(0.2);
 
@@ -142,8 +141,6 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
 
     const yaxis = d3.axisLeft(this.yScale)
       .tickSize(0);
-    // .tickSizeOuter(0);
-
 
     this.xAxis = this.chart.append('g')
       .attr('class', 'x axis')
@@ -154,14 +151,33 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
       .attr('class', 'y axis')
       .call(yaxis);
 
+  }
 
-    // move y axis path to the middle
-    d3.select('.y.axis path')
-      .attr('transform', 'translate(' + this.width / 2 + ',0)');
 
+  make_y_gridlines() {
+    return d3.axisLeft(this.yScale);
   }
 
   updateChart(jsonData: Array<any>) {
+
+    // update container size
+
+    const htmlElement = this.chartContainer.nativeElement;
+    this.width = htmlElement.offsetWidth - this.margin.left - this.margin.right;
+    this.height = htmlElement.offsetHeight - this.margin.top - this.margin.bottom;
+
+    this.svg
+      .attr('width', htmlElement.offsetWidth)
+      .attr('height', htmlElement.offsetHeight);
+
+    this.xScale
+      .range([0, this.width]);
+
+    this.yScale
+      .range([this.height, 0]);
+
+
+
     // update data
     this.proposalChartData.processGraphData(jsonData);
     this.proposalgraphData = this.proposalChartData.getGraphData();
@@ -188,14 +204,43 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
     this.yAxis.transition().call(yaxis);
 
 
+    d3.select('.y.axis path')
+      .attr('transform', 'translate(' + this.xScale(0) + ',0)');
+
+
+    // add the Y gridlines
+    const grids = this.chart.selectAll('.grid')
+      .data([0]);
+
+    grids.exit().remove();
+
+    grids.selectAll('.tick line')
+      .attr('x2', this.width);
+
+    grids.enter().append('g')
+      .attr('class', 'grid')
+      .call(this.make_y_gridlines()
+        // tickSize is minus
+        .tickSize(-this.width)
+        // remove the tick text
+        .tickFormat(d => (''))
+      );
+
+
+    const gridLine = d3.selectAll('.grid .tick line');
+
+    gridLine
+      .attr('y1', - this.yScale.step() / 2)
+      .attr('y2', - this.yScale.step() / 2);
+
+
 
     // start groups
     let groups = this.chart.selectAll('.group')
-      .data(HorizontalChartComponent.ageGroup);
+      .data(TornadoChartData.UKAgeGroup);
 
     groups.exit().remove();
 
-    console.log(groups);
 
     groups
       .attr('transform', d => 'translate(0,' + this.yScale(d) + ')');
@@ -210,17 +255,13 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
 
     // rejoin data VERY IMPORTANT
     groups = this.chart.selectAll('.group')
-      .data(HorizontalChartComponent.ageGroup);
-
-    // end groups
+      .data(TornadoChartData.UKAgeGroup);
 
 
     const bars = groups.selectAll('.bar')
       .data((d) => this.graphDataCombined.filter(d1 => (d1.key.ageGroup === d)));
 
     bars.exit().remove();
-
-    // console.log(bars);
 
 
     // update existing bars
@@ -248,4 +289,15 @@ export class HorizontalChartComponent implements OnInit, OnChanges {
       .attr('height', this.yInnerScale.bandwidth());
 
   }
+
+
+  @HostListener('window:resize', ['$event'])
+  onresize(event) {
+    // console.log('resize!');
+    this.updateChart(this.proposalJsonData);
+  }
+
+
+
+
 }

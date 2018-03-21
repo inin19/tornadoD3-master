@@ -12,7 +12,7 @@ export class TornadoChartData {
     static AGEGROUP = 'ageGroup';
     static GENDER = 'gender';
 
-    static UKAgeGroup = ['0-18', '18-35', '35-60', '60+'];
+    static UKAgeGroup = ['0-18', '19-25', '26-35', '36-45', '46-55', '56-60', '61-65', '66-70', '71-75', '76+'];
 
     private ndx: any;
 
@@ -57,6 +57,7 @@ export class TornadoChartData {
 
     createDimentionGroup(data: Array<any>) {
         this.ndx = crossfilter(data);
+
         this.regionDimension = this.ndx.dimension((d) => d.region);
         this.relationDimension = this.ndx.dimension((d) => d.relation);
         this.genderDimension = this.ndx.dimension((d) => d.gender);
